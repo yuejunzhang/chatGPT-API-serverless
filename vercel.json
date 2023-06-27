@@ -3,7 +3,7 @@
 
     "functions": {
       "api/chatGPT-API-Function.go": {
-        "maxDuration": 60
+        "maxDuration": 10
       }
     },
     "routes": [
