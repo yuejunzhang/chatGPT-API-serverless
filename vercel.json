@@ -1,0 +1,13 @@
+{
+    "version": 2,
+
+    "functions": {
+      "api/chatGPT-API-Function.go": {
+        "maxDuration": 60
+      }
+    },
+    "routes": [
+      { "src": "/v1/chat/completions", "dest": "api/chatGPT-API-Function" },
+      { "src": "/", "dest": "index.html" }
+    ]
+  }
