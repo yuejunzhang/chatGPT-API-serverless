@@ -2,6 +2,7 @@ package handler
 
 import (
 	// "bufio"
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -98,27 +99,7 @@ var (
 )
 
 // /////////////////////////////////////////////////////无服务器函数/////////////////////////////////////////////////////////////////////////////
-// func main() { //仅仅在开发环境测试函数，生产环境注释掉
-// 	// Init()
-// 	// 创建一个响应记录器
-// 	ww := httptest.NewRecorder()
-// 	// 创建一个 JSON 字符串作为请求体
-// 	requestBody := `{
-// 		"model":  "gpt-3.5-turbo",
-//     	"messages": [{"role": "user", "content": "你是谁"}],
-// 		"stream": true
-// 		}`
-// 	// 创建一个请求对象
-// 	rr := httptest.NewRequest("POST", "http://www.chat.openai.com", bytes.NewBuffer([]byte(requestBody)))
 
-// 	rr.Header.Add("Content-Type", "application/json")
-// 	rr.Header.Add("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36")
-// 	rr.Header.Add("Authorization", "Bearer "+"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ik1UaEVOVUpHTkVNMVFURTRNMEZCTWpkQ05UZzVNRFUxUlRVd1FVSkRNRU13UmtGRVFrRXpSZyJ9.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL3Byb2ZpbGUiOnsiZW1haWwiOiJha3Vua2VqaUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZX0sImh0dHBzOi8vYXBpLm9wZW5haS5jb20vYXV0aCI6eyJ1c2VyX2lkIjoidXNlci1yUTBOejFGa2d5VkJvblZTUDk1WnpWdlIifSwiaXNzIjoiaHR0cHM6Ly9hdXRoMC5vcGVuYWkuY29tLyIsInN1YiI6Imdvb2dsZS1vYXV0aDJ8MTE1NTA3NTE1MjAzNDIwNDY0NDkzIiwiYXVkIjpbImh0dHBzOi8vYXBpLm9wZW5haS5jb20vdjEiLCJodHRwczovL29wZW5haS5vcGVuYWkuYXV0aDBhcHAuY29tL3VzZXJpbmZvIl0sImlhdCI6MTY4Nzc2NTAxMywiZXhwIjoxNjg4OTc0NjEzLCJhenAiOiJUZEpJY2JlMTZXb1RIdE45NW55eXdoNUU0eU9vNkl0RyIsInNjb3BlIjoib3BlbmlkIHByb2ZpbGUgZW1haWwgbW9kZWwucmVhZCBtb2RlbC5yZXF1ZXN0IG9yZ2FuaXphdGlvbi5yZWFkIG9yZ2FuaXphdGlvbi53cml0ZSJ9.iIJJaNbv_uWzB2MSlHrmJ293qEvLcfOWYPEO_EjuPTvjj7EF1otQMfz2ppj3_blKfvxE4zGLZhTLOdIdY278WzZ6lXvqekQ-8HbdW90peHVgqgf2Kj1kKbZkSO-aDuhoerCUxnp1KE4oBd6Hp29BFWgRyCx2senox2TM7canm___VB8p0uNGw9w1At35o2OCWNZ11oE90zvZU_SPoe-Vcx1LITZrWhCC48WjyPMGlB1ghentYDeJMTThxJbb1vFLT6tiPEHmynALO4aW6_GFAm02UkCE4CVSv5O2aLxMOK0LLu4HuQ5R6HmCn3Xedbnwrk556OnfFtwmT8IV83mkwA")
-// 	// 调用处理函数
-// 	// rr.Header.Add("Authorization", "Bearer "+"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ik1UaEVOVUpHTkVNMVFURTRNMEZCTWpkQ05UZzVNRFUxUlRVd1FVSkRNRU13UmtGRVFrRXpSZyJ9.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL3Byb2ZpbGUiOnsiZW1haWwiOiJha3Vua2VqaUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZX0sImh0dHBzOi8vYXBpLm9wZW5haS5jb20vYXV0aCI6eyJ1c2VyX2lkIjoidXNlci1yUTBOejFGa2d5VkJvblZTUDk1WnpWdlIifSwiaXNzIjoiaHR0cHM6Ly9hdXRoMC5vcGVuYWkuY29tLyIsInN1YiI6Imdvb2dsZS1vYXV0aDJ8MTE1NTA3NTE1MjAzNDIwNDY0NDkzIiwiYXVkIjpbImh0dHBzOi8vYXBpLm9wZW5haS5jb20vdjEiLCJodHRwczovL29wZW5haS5vcGVuYWkuYXV0aDBhcHAuY29tL3VzZXJpbmZvIl0sImlhdCI6MTY4Njk2MDg1NiwiZXhwIjoxNjg4MTcwNDU2LCJhenAiOiJUZEpJY2JlMTZXb1RIdE45NW55eXdoNUU0eU9vNkl0RyIsInNjb3BlIjoib3BlbmlkIHByb2ZpbGUgZW1haWwgbW9kZWwucmVhZCBtb2RlbC5yZXF1ZXN0IG9yZ2FuaXphdGlvbi5yZWFkIG9yZ2FuaXphdGlvbi53cml0ZSJ9.kqdFg7UlvzNxNm1ns6hVDzb6UhvmRB9cf9xbjHHlY5FXXaO_dqE1qxZPOeq_bHk081bRxgXByYukxYMk8CAf6IrXZstLP5253kfwXMTbX8XvrYENek3FKp6F_C4GboosFaRKv2G6bvVYIORJfXvXlOzSDwlaxMDn8FuT3Cc1KoaHoF_yK-rgQFCLPPqcfGlJaTHuDMz1dS_Cj40mlNHBHJC5I-Y3vgrdrHmz1_31AwVGAmMyrQanNAp8daazhVVngA7xaUNqiF-18f3bHElgfiIF0JRqD5SLmCO_OQj22HKZhRk2g2Xq0U6EmrHTyiN5RXu1VzEOjrb_7RZy2fUsgQ")
-
-//		Handler(ww, rr)
-//	}
 func Handler(w http.ResponseWriter, r *http.Request) { //对下游的请求r进行响应w
 	// httpProxy := os.Getenv("http_proxy")
 	// accessToken = os.Getenv("ACCESS_TOKEN")
@@ -176,22 +157,22 @@ func Handler(w http.ResponseWriter, r *http.Request) { //对下游的请求r进�
 	}
 	//对上游返回的有效响应进行处理 w-----------------------------------------------------------------
 
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		panic(err)
-	}
-	print(string(body))
-	// var full_response string
-	// // for i := 2; i > 0; i-- {
-	// var continue_info *chatgpt.ContinueInfo
-	// var response_part string
-	// response_part, continue_info = chatgpt.Handler(&w, response, accessToken, translated_request, original_request.Stream) /////////////////////////////////////////////////////////
-	// full_response = response_part                                                                                          /////////////////////////////////////////////////////////
-	// println(full_response)
-	// if continue_info == nil {
-	// 	// break
-	// 	// os.Setenv("ConversationID", "")
+	// body, err := ioutil.ReadAll(response.Body)
+	// if err != nil {
+	// 	panic(err)
 	// }
+	// print(string(body))
+	var full_response string
+	// for i := 2; i > 0; i-- {
+	var continue_info *ContinueInfo
+	var response_part string
+	response_part, continue_info = responseHandler(&w, response, accessToken, translated_request, original_request.Stream) /////////////////////////////////////////////////////////
+	full_response = response_part                                                                                          /////////////////////////////////////////////////////////
+	println(full_response)
+	if continue_info == nil {
+		// break
+		// os.Setenv("ConversationID", "")
+	}
 
 	// println("continue_info.ConversationID:" + continue_info.ConversationID)
 	// println("continue_info.ParentID:" + continue_info.ParentID)
@@ -202,27 +183,25 @@ func Handler(w http.ResponseWriter, r *http.Request) { //对下游的请求r进�
 	// translated_request.ConversationID = continue_info.ConversationID //ConversationID 会话ID--用于同一会话标识
 	// translated_request.ParentMessageID = continue_info.ParentID      //上一条消息的ID--形成ID链用于上下文关联
 	// response, err = chatgpt.POSTconversation(translated_request, accessToken)
-	// if err != nil {
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// 	errorResponse := map[string]interface{}{
-	// 		"error": "error sending request",
-	// 	}
-	// 	json.NewEncoder(w).Encode(errorResponse)
-	// 	return
-	// }
-	// defer response.Body.Close()
-	// if chatgpt.Handle_request_error(w, response) { //向下游发回应错误
-	// 	return
-	// }
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		errorResponse := map[string]interface{}{
+			"error": "error sending request",
+		}
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+	defer response.Body.Close()
+	if Handle_request_error(w, response) { //向下游发回应错误
+		return
+	}
 	// }
 
 	if !original_request.Stream { //完成非流回复
 		// response := official_types.NewChatCompletion(full_response) //以官方格式回复
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		// json.NewEncoder(w).Encode(response)
-		fmt.Printf("%+v\n", response)
-		fmt.Fprint(w, body)
+		json.NewEncoder(w).Encode(response)
 	} else {
 		w.Header().Set("Content-Type", "text/plain") //完成流式回复
 		w.WriteHeader(http.StatusOK)
@@ -276,7 +255,7 @@ func POSTconversation(message ChatGPTRequest, access_token string) (*fhttp.Respo
 	// 	client.SetProxy(http_proxy)
 	// }
 
-	//client.SetProxy("http://127.0.0.1:7890") //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11
+	client.SetProxy("http://127.0.0.1:7890") //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11
 	apiUrl := "https://chat.openai.com/backend-api/conversation"
 	// if API_REVERSE_PROXY != "" {
 	// 	apiUrl = API_REVERSE_PROXY
@@ -336,4 +315,274 @@ func Handle_request_error(w http.ResponseWriter, resp *fhttp.Response) bool { //
 		return true
 	}
 	return false
+}
+
+type ContinueInfo struct {
+	ConversationID string `json:"conversation_id"`
+	ParentID       string `json:"parent_id"`
+}
+type StringStruct struct {
+	Text string `json:"text"`
+}
+
+func responseHandler(w *http.ResponseWriter, response *fhttp.Response, token string, translated_request ChatGPTRequest, stream bool) (string, *ContinueInfo) {
+	max_tokens := false
+
+	// Create a bufio.Reader from the response body
+	reader := bufio.NewReader(response.Body) //响应体有n行数据，每一行是回复内容（n个字）的逐字递增，
+	// body, err := ioutil.ReadAll(response.Body)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// print(string(body))
+
+	// Read the response byte by byte until a newline character is encountered逐字节读取响应，直到遇到换行符为止
+	if stream {
+		// Response content type is text/event-stream
+		(*w).Header().Set("Content-Type", "text/event-stream")
+	} else {
+		// Response content type is application/json
+		(*w).Header().Set("Content-Type", "application/json")
+	}
+	var finish_reason string
+	var previous_text StringStruct
+	var original_response ChatGPTResponse
+	var isRole = true
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return "", nil
+		}
+		if len(line) < 6 {
+			continue
+		}
+		// Remove "data: " from the beginning of the line
+		line = line[6:]
+		// Check if line starts with [DONE]
+		if !strings.HasPrefix(line, "[DONE]") {
+			// Parse the line as JSON
+
+			err = json.Unmarshal([]byte(line), &original_response)
+			if err != nil {
+				continue
+			}
+			if original_response.Error != nil {
+				(*w).WriteHeader(http.StatusInternalServerError)
+				// json.NewEncoder(w).Encode(gin.H{"error": original_response.Error})
+				response := map[string]interface{}{
+					"error": original_response.Error,
+				}
+				json.NewEncoder((*w)).Encode(response)
+				return "", nil
+			}
+			if original_response.Message.Author.Role != "assistant" || original_response.Message.Content.Parts == nil {
+				continue
+			}
+			if original_response.Message.Metadata.MessageType != "next" && original_response.Message.Metadata.MessageType != "continue" || original_response.Message.EndTurn != nil {
+				continue
+			}
+			response_string := ConvertToString(&original_response, &previous_text, isRole)
+			//previous_text积累每次循环的单词为一整个文本，用于非流式回复
+			isRole = false
+			if stream {
+				_, err = (*w).Write([]byte("data: " + response_string + "\n\n"))
+				if err != nil {
+					return "", nil
+				}
+			}
+			// Flush the response writer buffer to ensure that the client receives each line as it's written
+			// print(response_string) //////////////////////////////////////////////////////
+
+			println("\r" + previous_text.Text) //////////////////////////////////////////////////////
+
+			(*w).(http.Flusher).Flush()
+
+			if original_response.Message.Metadata.FinishDetails != nil {
+				if original_response.Message.Metadata.FinishDetails.Type == "max_tokens" {
+					max_tokens = true
+				}
+				finish_reason = original_response.Message.Metadata.FinishDetails.Type
+			}
+
+		} else {
+			if stream {
+				final_line := StopChunk(finish_reason)
+				(*w).Write([]byte("data: " + final_line.String() + "\n\n"))
+			}
+		}
+	}
+
+	if !max_tokens {
+		// return previous_text.Text, nil ////////////////////////////////////////////////
+		return previous_text.Text, &ContinueInfo{
+			ConversationID: original_response.ConversationID,
+			ParentID:       original_response.Message.ID,
+		}
+	}
+	return previous_text.Text, &ContinueInfo{
+		ConversationID: original_response.ConversationID,
+		ParentID:       original_response.Message.ID,
+	}
+}
+
+/////////////////////////////////////////官方api响应体结构
+
+type ChatCompletionChunk struct {
+	ID      string    `json:"id"`
+	Object  string    `json:"object"`
+	Created int64     `json:"created"`
+	Model   string    `json:"model"`
+	Choices []Choices `json:"choices"`
+}
+
+func (chunk *ChatCompletionChunk) String() string {
+	resp, _ := json.Marshal(chunk)
+	return string(resp)
+}
+
+type Choices struct {
+	Delta        Delta       `json:"delta"`
+	Index        int         `json:"index"`
+	FinishReason interface{} `json:"finish_reason"`
+}
+
+type Delta struct {
+	Content string `json:"content,omitempty"`
+	Role    string `json:"role,omitempty"`
+}
+
+func NewChatCompletionChunk(text string) ChatCompletionChunk {
+	return ChatCompletionChunk{
+		ID:      "chatcmpl-QXlha2FBbmROaXhpZUFyZUF3ZXNvbWUK",
+		Object:  "chat.completion.chunk",
+		Created: 0,
+		Model:   "gpt-3.5-turbo-0301",
+		Choices: []Choices{
+			{
+				Index: 0,
+				Delta: Delta{
+					Content: text,
+				},
+				FinishReason: nil,
+			},
+		},
+	}
+}
+
+func StopChunk(reason string) ChatCompletionChunk {
+	return ChatCompletionChunk{
+		ID:      "chatcmpl-QXlha2FBbmROaXhpZUFyZUF3ZXNvbWUK",
+		Object:  "chat.completion.chunk",
+		Created: 0,
+		Model:   "gpt-3.5-turbo-0301",
+		Choices: []Choices{
+			{
+				Index:        0,
+				FinishReason: reason,
+			},
+		},
+	}
+}
+
+type ChatCompletion struct {
+	ID      string   `json:"id"`
+	Object  string   `json:"object"`
+	Created int64    `json:"created"`
+	Model   string   `json:"model"`
+	Usage   usage    `json:"usage"`
+	Choices []Choice `json:"choices"`
+}
+type Msg struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+type Choice struct {
+	Index        int         `json:"index"`
+	Message      Msg         `json:"message"`
+	FinishReason interface{} `json:"finish_reason"`
+}
+type usage struct {
+	PromptTokens     int `json:"prompt_tokens"`
+	CompletionTokens int `json:"completion_tokens"`
+	TotalTokens      int `json:"total_tokens"`
+}
+
+func NewChatCompletion(full_test string) ChatCompletion {
+	return ChatCompletion{
+		ID:      "chatcmpl-QXlha2FBbmROaXhpZUFyZUF3ZXNvbWUK",
+		Object:  "chat.completion",
+		Created: int64(0),
+		Model:   "gpt-3.5-turbo-0301",
+		Usage: usage{
+			PromptTokens:     0,
+			CompletionTokens: 0,
+			TotalTokens:      0,
+		},
+		Choices: []Choice{
+			{
+				Message: Msg{
+					Content: full_test,
+					Role:    "assistant",
+				},
+				Index: 0,
+			},
+		},
+	}
+}
+
+// ///////////////////////////////////////非官方api响应体结构
+type ChatGPTResponse struct {
+	Message        Message     `json:"message"`
+	ConversationID string      `json:"conversation_id"`
+	Error          interface{} `json:"error"`
+}
+
+type Message struct {
+	ID         string      `json:"id"`
+	Author     Author      `json:"author"`
+	CreateTime float64     `json:"create_time"`
+	UpdateTime interface{} `json:"update_time"`
+	Content    Content     `json:"content"`
+	EndTurn    interface{} `json:"end_turn"`
+	Weight     float64     `json:"weight"`
+	Metadata   Metadata    `json:"metadata"`
+	Recipient  string      `json:"recipient"`
+}
+
+type Content struct {
+	ContentType string   `json:"content_type"`
+	Parts       []string `json:"parts"`
+}
+
+type Author struct {
+	Role     string                 `json:"role"`
+	Name     interface{}            `json:"name"`
+	Metadata map[string]interface{} `json:"metadata"`
+}
+
+type Metadata struct {
+	Timestamp     string         `json:"timestamp_"`
+	MessageType   string         `json:"message_type"`
+	FinishDetails *FinishDetails `json:"finish_details"`
+	ModelSlug     string         `json:"model_slug"`
+	Recipient     string         `json:"recipient"`
+}
+
+type FinishDetails struct {
+	Type string `json:"type"`
+	Stop string `json:"stop"`
+}
+
+// /////////////////////////////////////////////////////响应体 非转正
+func ConvertToString(chatgpt_response *ChatGPTResponse, previous_text *StringStruct, role bool) string {
+	translated_response := NewChatCompletionChunk(strings.ReplaceAll(chatgpt_response.Message.Content.Parts[0], *&previous_text.Text, ""))
+	if role {
+		translated_response.Choices[0].Delta.Role = chatgpt_response.Message.Author.Role
+	}
+	previous_text.Text = chatgpt_response.Message.Content.Parts[0]
+	return "data: " + translated_response.String() + "\n\n"
+
 }
