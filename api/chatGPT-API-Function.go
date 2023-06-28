@@ -176,11 +176,11 @@ func Handler(w http.ResponseWriter, r *http.Request) { //对下游的请求r进�
 	}
 	//对上游返回的有效响应进行处理 w-----------------------------------------------------------------
 
-	// body, err := ioutil.ReadAll(response.Body)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// print(string(body))
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		panic(err)
+	}
+	print(string(body))
 	// var full_response string
 	// // for i := 2; i > 0; i-- {
 	// var continue_info *chatgpt.ContinueInfo
@@ -220,8 +220,9 @@ func Handler(w http.ResponseWriter, r *http.Request) { //对下游的请求r进�
 		// response := official_types.NewChatCompletion(full_response) //以官方格式回复
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		// json.NewEncoder(w).Encode(response)
 		fmt.Printf("%+v\n", response)
+		fmt.Fprint(w, body)
 	} else {
 		w.Header().Set("Content-Type", "text/plain") //完成流式回复
 		w.WriteHeader(http.StatusOK)
