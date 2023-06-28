@@ -398,7 +398,7 @@ func responseHandler(w *http.ResponseWriter, response *fhttp.Response, token str
 
 			println("\r" + previous_text.Text) //////////////////////////////////////////////////////
 
-			(*w).(fhttp.Flusher).Flush()
+			// (*w).(fhttp.Flusher).Flush()
 
 			if original_response.Message.Metadata.FinishDetails != nil {
 				if original_response.Message.Metadata.FinishDetails.Type == "max_tokens" {
