@@ -221,6 +221,7 @@ func Handler(w http.ResponseWriter, r *http.Request) { //对下游的请求r进�
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(response)
+		fmt.Printf("%+v\n", response)
 	} else {
 		w.Header().Set("Content-Type", "text/plain") //完成流式回复
 		w.WriteHeader(http.StatusOK)
