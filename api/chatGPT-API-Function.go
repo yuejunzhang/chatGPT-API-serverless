@@ -274,7 +274,7 @@ func POSTconversation(message ChatGPTRequest, access_token string) (*fhttp.Respo
 	// 	client.SetProxy(http_proxy)
 	// }
 
-	client.SetProxy("http://127.0.0.1:7890") //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11
+	//client.SetProxy("http://127.0.0.1:7890") //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11
 	apiUrl := "https://chat.openai.com/backend-api/conversation"
 	// if API_REVERSE_PROXY != "" {
 	// 	apiUrl = API_REVERSE_PROXY
