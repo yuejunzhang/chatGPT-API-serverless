@@ -198,7 +198,7 @@ func Handler(w http.ResponseWriter, r *http.Request) { //对下游的请求r进�
 	// }
 
 	if !original_request.Stream { //完成非流回复
-		// response := official_types.NewChatCompletion(full_response) //以官方格式回复
+		response := NewChatCompletion(full_response) //以官方格式回复
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(response)
