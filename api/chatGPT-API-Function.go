@@ -325,7 +325,7 @@ func responseHandler(w *http.ResponseWriter, response *fhttp.Response, stream bo
 			//previous_text积累每次循环的单词为一整个文本，用于非流式回复
 			isRole = false
 			if stream {
-				_, err = (*w).Write([]byte("data: " + response_string + "\n\n"))
+				_, err = (*w).Write([]byte(response_string + "\n\n"))
 				if err != nil {
 					return "", nil
 				}
