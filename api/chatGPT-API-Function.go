@@ -91,6 +91,7 @@ var (
 	// http_proxy        = os.Getenv("http_proxy")
 	// API_REVERSE_PROXY = os.Getenv("API_REVERSE_PROXY")
 )
+var http_proxy string
 
 // /////////////////////////////////////////////////////////////////////无服务器函数/////////////////////////////////////////////////////////////////////////////
 
@@ -99,7 +100,7 @@ func Handler(w http.ResponseWriter, r *http.Request) { //对下游请求r的响�
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST")
 	w.Header().Set("Access-Control-Allow-Headers", "*")
-	// w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Connection", "keep-alive")
 	accessToken := r.Header.Get("Authorization")
 	if accessToken != "" {
 		customAccessToken := strings.Replace(accessToken, "Bearer ", "", 1)
@@ -212,7 +213,9 @@ func randint(min int, max int) int {
 
 func POSTconversation(message ChatGPTRequest, access_token string) (*fhttp.Response, error) { ///发送非官方请求
 
-	// client.SetProxy("http://127.0.0.1:7890") //调试时使用!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	if http_proxy != "" {
+		client.SetProxy(http_proxy) //调试时使用!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	}
 	apiUrl := "https://chat.openai.com/backend-api/conversation"
 
 	// JSONify the body and add it to the request
@@ -331,8 +334,9 @@ func responseHandler(w *http.ResponseWriter, response *fhttp.Response, stream bo
 				}
 				// println("\r" + response_string)
 				// println("---------------------------------------------")
+
 			}
-			(*w).(http.Flusher).Flush()
+			(*w).(http.Flusher).Flush() //立即推送
 			if original_response.Message.Metadata.FinishDetails != nil {
 				if original_response.Message.Metadata.FinishDetails.Type == "max_tokens" {
 					max_tokens = true
