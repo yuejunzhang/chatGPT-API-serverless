@@ -163,7 +163,7 @@ func Handler(w http.ResponseWriter, r *http.Request) { //对下游请求r的响�
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(response)
 	} else {
-		w.Header().Set("Content-Type", "text/event-stream") //完成流式回复text/plain
+		w.Header().Set("Content-Type", "text/plain") //完成流式回复
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "data: [DONE]\n\n")
 	}
