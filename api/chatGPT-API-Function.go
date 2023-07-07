@@ -337,6 +337,9 @@ func responseHandler(w *http.ResponseWriter, response *fhttp.Response, stream bo
 
 			}
 			// (*w).(http.Flusher).Flush() //立即推送
+			if f, ok := (*w).(http.Flusher); ok {
+				f.Flush()
+			}
 			if original_response.Message.Metadata.FinishDetails != nil {
 				if original_response.Message.Metadata.FinishDetails.Type == "max_tokens" {
 					max_tokens = true
