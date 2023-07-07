@@ -100,7 +100,7 @@ func Handler(w http.ResponseWriter, r *http.Request) { //对下游请求r的响�
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST")
 	w.Header().Set("Access-Control-Allow-Headers", "*")
-	w.Header().Set("Connection", "keep-alive")
+	// w.Header().Set("Connection", "keep-alive")
 	accessToken := r.Header.Get("Authorization")
 	if accessToken != "" {
 		customAccessToken := strings.Replace(accessToken, "Bearer ", "", 1)
