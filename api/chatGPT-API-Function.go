@@ -1,18 +1,13 @@
 package handler
 
 import (
-	// "bufio"
 	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
-
-	// "io/ioutil"
 	"math/rand"
 	"net/http"
-
-	// "net/http/httptest" //仅仅在开发环境配合main()测试函数，生产环境注释掉
 	"os"
 	"strconv"
 	"strings"
@@ -20,7 +15,6 @@ import (
 	fhttp "github.com/bogdanfinn/fhttp"
 	tls_client "github.com/bogdanfinn/tls-client"
 	"github.com/google/uuid"
-	// "github.com/joho/godotenv"
 )
 
 // ////////////////////////////////////////////////////////////////////官方api请求格式
@@ -70,7 +64,7 @@ func NewChatGPTRequest() ChatGPTRequest {
 		Action:                     "next",
 		ParentMessageID:            uuid.NewString(),
 		Model:                      "text-davinci-002-render-sha",
-		HistoryAndTrainingDisabled: !enable_history, //!!!!!!!!!!!!!!是否保存对话历史
+		HistoryAndTrainingDisabled: !enable_history, //是否保存对话历史
 	}
 }
 
@@ -93,21 +87,19 @@ var (
 		// Disable SSL verification
 		tls_client.WithInsecureSkipVerify(),
 	}
-	client, _         = tls_client.NewHttpClient(tls_client.NewNoopLogger(), options...)
-	http_proxy        = os.Getenv("http_proxy")
-	API_REVERSE_PROXY = os.Getenv("API_REVERSE_PROXY")
+	client, _ = tls_client.NewHttpClient(tls_client.NewNoopLogger(), options...)
+	// http_proxy        = os.Getenv("http_proxy")
+	// API_REVERSE_PROXY = os.Getenv("API_REVERSE_PROXY")
 )
 
-// /////////////////////////////////////////////////////无服务器函数/////////////////////////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////////////////无服务器函数/////////////////////////////////////////////////////////////////////////////
 
-func Handler(w http.ResponseWriter, r *http.Request) { //对下游的请求r进行响应w
-	// httpProxy := os.Getenv("http_proxy")
-	// accessToken = os.Getenv("ACCESS_TOKEN")
+func Handler(w http.ResponseWriter, r *http.Request) { //对下游请求r的响应w
 
-	// 进行处理////////////////////////////////////////////////////////////////////////
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST")
 	w.Header().Set("Access-Control-Allow-Headers", "*")
+	w.Header().Set("Connection", "keep-alive")
 	accessToken := r.Header.Get("Authorization")
 	if accessToken != "" {
 		customAccessToken := strings.Replace(accessToken, "Bearer ", "", 1)
@@ -115,16 +107,12 @@ func Handler(w http.ResponseWriter, r *http.Request) { //对下游的请求r进�
 		if strings.HasPrefix(customAccessToken, "eyJhbGciOiJSUzI1NiI") {
 			accessToken = customAccessToken
 		}
-		// parts := strings.Fields(accessToken)
-		// if len(parts) >= 2 {
-		// 	accessToken = parts[1]
-		//
 	}
-	// func nightmare(c *gin.Context) {///////////////////////////////////////////////////////////////////
+
 	var original_request APIRequest
 
-	err := json.NewDecoder(r.Body).Decode(&original_request) //尝试解析下游请求为官方API请求
-	if err != nil {                                          //下游API请求不符合官方格式
+	err := json.NewDecoder(r.Body).Decode(&original_request)
+	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		errorResponse := map[string]interface{}{
 			"error": map[string]interface{}{
@@ -138,51 +126,10 @@ func Handler(w http.ResponseWriter, r *http.Request) { //对下游的请求r进�
 		return
 	}
 
-	// Convert the chat request to a ChatGPT request转换官方API请求为chatGPTAPI请求（backend-api）
-	// original_request.Stream = false 这并不有效
+	// 转换官方API请求为chatGPTAPI请求（backend-api）
 	translated_request := ConvertAPIRequest(original_request)
 
 	response, err := POSTconversation(translated_request, accessToken) //向上游发起请求
-	if err != nil {                                                    //向上游发起请求出错
-		w.WriteHeader(http.StatusInternalServerError)
-		errorResponse := map[string]interface{}{
-			"error": "error sending request",
-		}
-		json.NewEncoder(w).Encode(errorResponse)
-		return
-	}
-	defer response.Body.Close()
-	if Handle_request_error(w, response) { //向下游发回应错误
-		return
-	}
-	//对上游返回的有效响应进行处理 w-----------------------------------------------------------------
-
-	// body, err := ioutil.ReadAll(response.Body)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// print(string(body))
-	var full_response string
-	// for i := 2; i > 0; i-- {
-	var continue_info *ContinueInfo
-	var response_part string
-	response_part, continue_info = responseHandler(&w, response, accessToken, translated_request, original_request.Stream) /////////////////////////////////////////////////////////
-	full_response = response_part                                                                                          /////////////////////////////////////////////////////////
-	println(full_response)
-	if continue_info == nil {
-		// break
-		// os.Setenv("ConversationID", "")
-	}
-
-	// println("continue_info.ConversationID:" + continue_info.ConversationID)
-	// println("continue_info.ParentID:" + continue_info.ParentID)
-	// println("Continuing conversation") //连续的会话
-	// translated_request = chatgpt_request_converter.ConvertAPIRequest(original_request)
-	// // translated_request.Action = "continue"
-	// translated_request.Action = "next"//next--进行下一句，continue--在同一句中继续
-	// translated_request.ConversationID = continue_info.ConversationID //ConversationID 会话ID--用于同一会话标识
-	// translated_request.ParentMessageID = continue_info.ParentID      //上一条消息的ID--形成ID链用于上下文关联
-	// response, err = chatgpt.POSTconversation(translated_request, accessToken)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		errorResponse := map[string]interface{}{
@@ -195,7 +142,20 @@ func Handler(w http.ResponseWriter, r *http.Request) { //对下游的请求r进�
 	if Handle_request_error(w, response) { //向下游发回应错误
 		return
 	}
-	// }
+
+	///////////////////////////////////////////////////////////////////////对上游返回的有效响应进行处理
+	var full_response string
+	var continue_info *ContinueInfo
+	var response_part string
+
+	response_part, continue_info = responseHandler(&w, response, original_request.Stream)
+
+	full_response = response_part
+	// println(full_response)
+	if continue_info == nil {
+		return
+		// break
+	}
 
 	if !original_request.Stream { //完成非流回复
 		response := NewChatCompletion(full_response) //以官方格式回复
@@ -208,9 +168,9 @@ func Handler(w http.ResponseWriter, r *http.Request) { //对下游的请求r进�
 		fmt.Fprint(w, "data: [DONE]\n\n")
 	}
 
-	// }
+}
 
-} //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func ConvertAPIRequest(api_request APIRequest) ChatGPTRequest { ///官方api请求转非官方请求
 	chatgpt_request := NewChatGPTRequest()
@@ -251,15 +211,9 @@ func randint(min int, max int) int {
 }
 
 func POSTconversation(message ChatGPTRequest, access_token string) (*fhttp.Response, error) { ///发送非官方请求
-	// if http_proxy != "" && len(proxies) == 0 {
-	// 	client.SetProxy(http_proxy)
-	// }
 
-	// client.SetProxy("http://127.0.0.1:7890") //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11
+	// client.SetProxy("http://127.0.0.1:7890") //调试时使用!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	apiUrl := "https://chat.openai.com/backend-api/conversation"
-	// if API_REVERSE_PROXY != "" {
-	// 	apiUrl = API_REVERSE_PROXY
-	// }
 
 	// JSONify the body and add it to the request
 	body_json, err := json.Marshal(message)
@@ -271,11 +225,8 @@ func POSTconversation(message ChatGPTRequest, access_token string) (*fhttp.Respo
 	if err != nil {
 		return &fhttp.Response{}, err
 	}
-	// // Clear cookies
-	// if os.Getenv("PUID") != "" {
-	// 	request.Header.Set("Cookie", "_puid="+os.Getenv("PUID")+";")
-	// }
-	request.Header.Set("Content-Type", "application/json")
+
+	request.Header.Set("Content-Type", "application/json") //"text/event-stream"
 	request.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36")
 	request.Header.Set("Accept", "*/*")
 	if access_token != "" {
@@ -284,7 +235,6 @@ func POSTconversation(message ChatGPTRequest, access_token string) (*fhttp.Respo
 	if err != nil {
 		return &fhttp.Response{}, err
 	}
-	// fmt.Printf("%+v\n", request)
 
 	response, err := client.Do(request)
 	return response, err
@@ -298,17 +248,17 @@ func Handle_request_error(w http.ResponseWriter, resp *fhttp.Response) bool { //
 		if err != nil {
 			// Read response body
 			body, _ := io.ReadAll(resp.Body)
-			// http.Error(w, string(body), http.StatusInternalServerError)
-			w.WriteHeader(fhttp.StatusInternalServerError) ////////////////////////////////////////////////////
+
+			w.WriteHeader(fhttp.StatusInternalServerError)
 			_, err := w.Write([]byte(body))
 			if err != nil {
 				return true
 			}
 			return true
 		}
-		// http.Error(w, error_response["detail"].(string), resp.StatusCode)
+
 		w.WriteHeader(resp.StatusCode)
-		_, err1 := w.Write([]byte(error_response["detail"].(string))) //////////////////////////////////
+		_, err1 := w.Write([]byte(error_response["detail"].(string)))
 		if err1 != nil {
 			return true
 		}
@@ -325,18 +275,9 @@ type StringStruct struct {
 	Text string `json:"text"`
 }
 
-func responseHandler(w *http.ResponseWriter, response *fhttp.Response, token string, translated_request ChatGPTRequest, stream bool) (string, *ContinueInfo) {
+func responseHandler(w *http.ResponseWriter, response *fhttp.Response, stream bool) (string, *ContinueInfo) {
 	max_tokens := false
-
-	// Create a bufio.Reader from the response body
-	reader := bufio.NewReader(response.Body) //响应体有n行数据，每一行是回复内容（n个字）的逐字递增，
-	// body, err := ioutil.ReadAll(response.Body)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// print(string(body))
-
-	// Read the response byte by byte until a newline character is encountered逐字节读取响应，直到遇到换行符为止
+	var err error
 	if stream {
 		// Response content type is text/event-stream
 		(*w).Header().Set("Content-Type", "text/event-stream")
@@ -348,21 +289,17 @@ func responseHandler(w *http.ResponseWriter, response *fhttp.Response, token str
 	var previous_text StringStruct
 	var original_response ChatGPTResponse
 	var isRole = true
-	for {
-		line, err := reader.ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return "", nil
-		}
-		if len(line) < 6 {
-			continue
-		}
-		// Remove "data: " from the beginning of the line
-		line = line[6:]
-		// Check if line starts with [DONE]
+	// 使用 bufio 读取一行数据
+	scanner := bufio.NewScanner(response.Body)
+	line := ""
+	for scanner.Scan() {
+		line = scanner.Text()
+		line = scanner.Text()
+		line = strings.TrimPrefix(line, "data: ")
+		// line = strings.TrimRight(line, "\n")
+
 		if !strings.HasPrefix(line, "[DONE]") {
+
 			// Parse the line as JSON
 
 			err = json.Unmarshal([]byte(line), &original_response)
@@ -371,7 +308,6 @@ func responseHandler(w *http.ResponseWriter, response *fhttp.Response, token str
 			}
 			if original_response.Error != nil {
 				(*w).WriteHeader(http.StatusInternalServerError)
-				// json.NewEncoder(w).Encode(gin.H{"error": original_response.Error})
 				response := map[string]interface{}{
 					"error": original_response.Error,
 				}
@@ -379,6 +315,7 @@ func responseHandler(w *http.ResponseWriter, response *fhttp.Response, token str
 				return "", nil
 			}
 			if original_response.Message.Author.Role != "assistant" || original_response.Message.Content.Parts == nil {
+
 				continue
 			}
 			if original_response.Message.Metadata.MessageType != "next" && original_response.Message.Metadata.MessageType != "continue" || original_response.Message.EndTurn != nil {
@@ -392,13 +329,9 @@ func responseHandler(w *http.ResponseWriter, response *fhttp.Response, token str
 				if err != nil {
 					return "", nil
 				}
+				// println("\r" + response_string)
+				// println("---------------------------------------------")
 			}
-			// Flush the response writer buffer to ensure that the client receives each line as it's written
-			// print(response_string) //////////////////////////////////////////////////////
-
-			println("\r" + previous_text.Text) //////////////////////////////////////////////////////
-
-			// (*w).(fhttp.Flusher).Flush()
 
 			if original_response.Message.Metadata.FinishDetails != nil {
 				if original_response.Message.Metadata.FinishDetails.Type == "max_tokens" {
@@ -413,10 +346,11 @@ func responseHandler(w *http.ResponseWriter, response *fhttp.Response, token str
 				(*w).Write([]byte("data: " + final_line.String() + "\n\n"))
 			}
 		}
+
 	}
 
 	if !max_tokens {
-		// return previous_text.Text, nil ////////////////////////////////////////////////
+		// return previous_text.Text, nil
 		return previous_text.Text, &ContinueInfo{
 			ConversationID: original_response.ConversationID,
 			ParentID:       original_response.Message.ID,
@@ -426,9 +360,10 @@ func responseHandler(w *http.ResponseWriter, response *fhttp.Response, token str
 		ConversationID: original_response.ConversationID,
 		ParentID:       original_response.Message.ID,
 	}
+
 }
 
-/////////////////////////////////////////官方api响应体结构
+///////////////////////////////////////////////////////////////////////官方api响应体结构
 
 type ChatCompletionChunk struct {
 	ID      string    `json:"id"`
@@ -533,7 +468,7 @@ func NewChatCompletion(full_test string) ChatCompletion {
 	}
 }
 
-// ///////////////////////////////////////非官方api响应体结构
+// /////////////////////////////////////////////////////////////////////非官方api响应体结构
 type ChatGPTResponse struct {
 	Message        Message     `json:"message"`
 	ConversationID string      `json:"conversation_id"`
@@ -576,7 +511,7 @@ type FinishDetails struct {
 	Stop string `json:"stop"`
 }
 
-// /////////////////////////////////////////////////////响应体 非转正
+// /////////////////////////////////////////////////////////////////////响应体 非转官
 func ConvertToString(chatgpt_response *ChatGPTResponse, previous_text *StringStruct, role bool) string {
 	translated_response := NewChatCompletionChunk(strings.ReplaceAll(chatgpt_response.Message.Content.Parts[0], *&previous_text.Text, ""))
 	if role {
