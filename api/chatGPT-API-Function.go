@@ -329,7 +329,7 @@ func responseHandler(w *http.ResponseWriter, response *fhttp.Response, stream bo
 			//previous_text积累每次循环的单词为一整个文本，用于非流式回复
 			isRole = false
 			if stream {
-				_, err = (*w).Write([]byte(response_string + "\n\n"))
+				_, err = writer.Write([]byte(response_string + "\n\n"))
 				if err != nil {
 					return "", nil
 				}
@@ -349,7 +349,7 @@ func responseHandler(w *http.ResponseWriter, response *fhttp.Response, stream bo
 		} else {
 			if stream {
 				final_line := StopChunk(finish_reason)
-				(*w).Write([]byte("data: " + final_line.String() + "\n\n"))
+				writer.Write([]byte("data: " + final_line.String() + "\n\n"))
 			}
 		}
 
