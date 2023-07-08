@@ -279,7 +279,7 @@ type StringStruct struct {
 }
 
 func responseHandler(w *http.ResponseWriter, response *fhttp.Response, stream bool) (string, *ContinueInfo) {
-	writer := bufio.NewWriterSize((*w), 512)
+	writer := bufio.NewWriterSize((*w), 64)
 	max_tokens := false
 	var err error
 	if stream {
